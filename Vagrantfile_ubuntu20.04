@@ -1,0 +1,67 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+
+Vagrant.configure("2") do |config|
+
+  config.vm.box = "ubuntu/focal64"
+  # config.vm.network "forwarded_port", guest: 80, host: 8088
+  # config.vm.network "public_network", :bridge => 'en0'
+  # config.vm.synced_folder ".", "/vagrant_data"
+  # config.disksize.size = "20GB"
+  
+  # Master node
+  config.vm.define "master" do |master|
+    # guestOS GUI
+    # master.vm.gui = true
+    # guestOS hotsname in /etc/hosts
+    master.vm.hostname = "master"
+    # Network Adapter 2 - Bridged
+    master.vm.network "public_network", bridge: "ethernet2"
+    # Network Adapter 1 - NAT
+    master.vm.network "forwarded_port", guest: 80, host: 8080
+    # master.vm.network "forwarded_port", guest: 22, host: 2220
+    master.vm.provider "virtualbox" do |spec|
+      # spec.customize ["modifyvm", :id, "--nic1", "bridged"]
+      # spec.customize ["modifyvm", :id, "--bridgeadapter1", "ethernet2"]
+      spec.name = "Master"
+      spec.memory = 4096
+      spec.cpus = 2
+    end
+    # master.vm.disk :disk, size: "10GB", primary: true
+    # master.disksize.size = "10GB"
+  end
+
+  # Worker node
+  $workernode = 2
+  (1..$workernode).each do |i|
+    config.vm.define "worker#{i}" do |worker|
+      worker.vm.hostname = "worker#{i}"
+      worker.vm.network "public_network", bridge: "ethernet2"
+      worker.vm.network "forwarded_port", guest: 80, host: "808#{i}"
+      # worker.vm.network "forwarded_port", guest: 22, host: "222#{i}"
+      worker.vm.provider "virtualbox" do |spec|
+        spec.name = "worker#{i}"
+        spec.memory = 4096
+        spec.cpus = 2
+      end
+    end
+  end  
+
+  config.vm.box_check_update = false
+
+  # config.vm.provision "shell", inline: <<-SHELL
+    # sudo apt-get update
+    # sudo apt-get upgrade -y
+    # sudo apt-get dist-upgrade -y
+    # sudo apt-get install -y openssh
+    # sudo apt-get autoremove -y
+    # sudo wget -q0- https://get.docker.com/ | sh
+    # sudo usermod -aG docker vagrant
+  # SHELL
+
+end
